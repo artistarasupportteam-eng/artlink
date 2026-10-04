@@ -25,6 +25,7 @@ function SettingsBody() {
   const [choice, setChoice] = useState<ThemeChoice>(storedTheme());
   const [email, setEmail] = useState("");
   const [adminExists, setAdminExists] = useState(true);
+  const [canClaim, setCanClaim] = useState(false);
   const [role, setRole] = useState<"admin" | "user">("user");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -32,6 +33,7 @@ function SettingsBody() {
     getMe().then((me) => {
       setEmail(me.email);
       setAdminExists(me.adminExists);
+      setCanClaim(me.canClaimAdmin);
       setRole(me.role);
       setChoice(me.theme);
       applyTheme(me.theme);
@@ -58,11 +60,11 @@ function SettingsBody() {
         <h2 className="font-medium">Account</h2>
         <p className="text-muted">{email || "Signed in"}</p>
       </section>
-      {!adminExists && role !== "admin" ? (
+      {canClaim && !adminExists && role !== "admin" ? (
         <section className="grid gap-2 rounded-lg border border-border bg-surface p-4">
           <h2 className="font-medium">Administrator setup</h2>
-          <p className="text-sm text-muted">No administrator exists yet. The first signed-in person to claim this becomes the platform administrator. Do this only if you operate ARTLink.</p>
-          <Button type="button" variant="primary" onClick={() => claimAdmin().then(() => { setRole("admin"); setAdminExists(true); toast.success("You are the administrator"); }).catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not claim."))}>Become administrator</Button>
+          <p className="text-sm text-muted">This is the ARTLink operator account. Claiming confirms the administrator role. Other accounts cannot take it.</p>
+          <Button type="button" variant="primary" onClick={() => claimAdmin().then(() => { setRole("admin"); setAdminExists(true); setCanClaim(false); toast.success("You are the administrator"); }).catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not claim."))}>Become administrator</Button>
         </section>
       ) : null}
       <section className="grid gap-3 rounded-lg border border-danger/40 p-4">

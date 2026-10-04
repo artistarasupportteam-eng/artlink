@@ -84,6 +84,7 @@ export type Me = {
   role: "admin" | "user";
   suspended: boolean;
   adminExists: boolean;
+  canClaimAdmin: boolean;
   unread: number;
 };
 

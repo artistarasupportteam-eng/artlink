@@ -32,14 +32,14 @@ Do not commit secrets. Deployed hosting injects server environment variables. Na
 | Name | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Neon Postgres connection string |
-| `ARTLINK_ADMIN_EMAILS` | Optional comma-separated emails that are promoted to administrator on sign-in |
+| `ARTLINK_ADMIN_EMAILS` | Extra comma-separated emails promoted to administrator on sign-in. `artistmusicresidency@gmail.com` is always included. |
 | Auth client id, secret, and issuer | Injected for the Google / X broker. Never put these in client code |
 
 `VITE_` variables are the only ones exposed to the browser. Do not prefix secrets with `VITE_`.
 
 ## Administrator
 
-There is no default password. If `ARTLINK_ADMIN_EMAILS` is unset, the first signed-in person can claim the administrator role from Settings while no administrator exists. After that, only an administrator can promote someone else. Every admin API checks the role on the server.
+There is no default password. Signing in as `artistmusicresidency@gmail.com` promotes that account to administrator. Other people cannot claim the role. After an administrator exists, only an administrator can promote someone else. Every admin API checks the role on the server. Additional operator emails can be listed in `ARTLINK_ADMIN_EMAILS`.
 
 ## Data
 

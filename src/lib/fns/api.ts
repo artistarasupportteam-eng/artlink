@@ -95,6 +95,16 @@ function safeDest(value: string): string {
   throw new Error("Destination must be a site path or an http(s) URL.");
 }
 
+const DESIGNATED_ADMIN = "artistmusicresidency@gmail.com";
+
+function adminEmails(): string[] {
+  const fromEnv = (process.env.ARTLINK_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  return [...new Set([DESIGNATED_ADMIN, ...fromEnv])];
+}
+
 async function touchUser(sql: Sql, userId: string) {
   const users = await sql<{ email: string; name: string; image: string | null }>`
     select email, name, image from "user" where id = ${userId}
@@ -106,10 +116,7 @@ async function touchUser(sql: Sql, userId: string) {
     values (${userId}, ${user?.name ?? ""})
     on conflict (user_id) do nothing
   `;
-  const allow = (process.env.ARTLINK_ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
+  const allow = adminEmails();
   if (user?.email && allow.includes(user.email.toLowerCase())) {
     await sql`update user_roles set role = 'admin' where user_id = ${userId}`;
   }
@@ -672,6 +679,9 @@ export const getMe = createServerFn({ method: "GET" })
       role: role.role === "admin" ? "admin" : "user",
       suspended: role.suspended,
       adminExists: (await adminCount(sql)) > 0,
+      canClaimAdmin:
+        role.role !== "admin" &&
+        Boolean(user?.email && adminEmails().includes(user.email.toLowerCase())),
       unread: num(unreadRows[0]?.n),
     };
   });
@@ -722,8 +732,13 @@ export const claimAdmin = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
-    await touchUser(sql, context.userId);
+    const user = await touchUser(sql, context.userId);
     await assertActive(sql, context.userId);
+    const email = (user?.email ?? "").toLowerCase();
+    if (!adminEmails().includes(email)) {
+      throw new Error("Administrator access is reserved for the ARTLink operator account.");
+    }
+    if ((await roleOf(sql, context.userId)).role === "admin") return { ok: true };
     if ((await adminCount(sql)) > 0) throw new Error("An administrator already exists.");
     await sql`update user_roles set role = 'admin' where user_id = ${context.userId}`;
     await audit(sql, context.userId, "claim-admin", context.userId, "Initial administrator claimed.");

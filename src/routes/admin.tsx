@@ -46,14 +46,14 @@ function AdminGate() {
   const [state, setState] = useState<"loading" | "admin" | "claim" | "denied">("loading");
   const [error, setError] = useState("");
   useEffect(() => {
-    getMe().then((me) => setState(me.role === "admin" ? "admin" : me.adminExists ? "denied" : "claim")).catch(() => setState("denied"));
+    getMe().then((me) => setState(me.role === "admin" ? "admin" : me.canClaimAdmin && !me.adminExists ? "claim" : "denied")).catch(() => setState("denied"));
   }, []);
   if (state === "loading") return <Spinner />;
   if (state === "claim") {
     return (
       <div className="grid max-w-lg gap-3">
         <h1 className="font-display text-3xl">Administrator setup</h1>
-        <p className="text-sm text-muted">No administrator exists. Claiming this role gives you server-checked control of users, links, ads, and announcements. Only the operator of ARTLink should continue.</p>
+        <p className="text-sm text-muted">This operator account can confirm the administrator role. Other accounts cannot claim it. Signing in with the operator email also promotes it automatically.</p>
         <ErrorNote>{error}</ErrorNote>
         <Button variant="primary" onClick={() => claimAdmin().then(() => setState("admin")).catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not claim."))}>Claim administrator</Button>
       </div>
